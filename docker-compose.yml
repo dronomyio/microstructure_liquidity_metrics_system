@@ -1,0 +1,79 @@
+version: '3.6'
+
+services:
+  liquidity-metrics:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: liquidity-metrics:latest
+    container_name: liquidity-metrics-service
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - POLYGON_API_KEY=${POLYGON_API_KEY}
+      - REDIS_HOST=redis
+      - POSTGRES_HOST=postgres
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./cache:/app/cache
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - liquidity-network
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  redis:
+    image: redis:7-alpine
+    container_name: liquidity-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - liquidity-network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: liquidity-postgres
+    environment:
+      - POSTGRES_DB=liquidity_metrics
+      - POSTGRES_USER=liquidity_user
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-changeme}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - liquidity-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: liquidity-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+    volumes:
+      - grafana-data:/var/lib/grafana
+    networks:
+      - liquidity-network
+
+volumes:
+  redis-data:
+  postgres-data:
+  grafana-data:
+
+networks:
+  liquidity-network:
+    driver: bridge

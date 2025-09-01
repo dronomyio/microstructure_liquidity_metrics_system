@@ -160,7 +160,7 @@ The math reveals that these proxies capture complementary aspects of liquidity -
 
 # Relevant Papers
 
-I should clarify that I was synthesizing from multiple foundational papers in market microstructure, not following a single source. Let me provide the specific paper references for each component:
+Synthesized from multiple foundational papers in market microstructure, not following a single source. Let me provide the specific paper references for each component:
 
 ## **Primary Papers for Each Measure**
 
@@ -203,4 +203,66 @@ If looking for a unified treatment, these surveys cover multiple measures:
 
 The mathematical framework presented synthesizes across these papers rather than coming from a single source. Is there a particular aspect or specific paper you'd like me to elaborate on?
 
+## Project Structure
+```
+liquidity-metrics/
+├── CMakeLists.txt
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt
+├── setup.py
+├── src/
+│   ├── cpp/
+│   │   ├── main.cpp
+│   │   ├── simd_processor.cpp
+│   │   ├── simd_processor.h
+│   │   ├── cuda_processor.cu
+│   │   ├── cuda_processor.cuh
+│   │   ├── polygon_parser.cpp
+│   │   ├── polygon_parser.h
+│   │   ├── liquidity_metrics.cpp
+│   │   └── liquidity_metrics.h
+│   └── python/
+│       ├── __init__.py
+│       ├── liquidity_api.py
+│       ├── polygon_client.py
+│       └── bindings.cpp
+├── tests/
+│   ├── test_simd.cpp
+│   ├── test_cuda.cpp
+│   └── test_python.py
+└── examples/
+    └── example_usage.py
+```
+## Build and Run Instructions
 
+```bash
+# Build Docker image
+docker-compose build
+
+# Start all services
+docker-compose up -d
+
+# Run example
+docker exec -it liquidity-metrics-service python3 examples/example_usage.py
+
+# Access API
+curl http://localhost:8080/health
+
+# Calculate metrics via API
+curl -X POST http://localhost:8080/calculate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "symbol": "AAPL",
+    "start_date": "2024-01-01",
+    "end_date": "2024-01-31",
+    "metrics": ["amihud", "duration", "hazard", "holes"],
+    "use_gpu": true
+  }'
+
+# Run benchmarks
+curl http://localhost:8080/benchmark
+
+# View monitoring
+open http://localhost:3000  # Grafana dashboard
+```
